@@ -13,50 +13,78 @@ import requests
 import urllib.parse
 
 erp_server_settings = frappe.get_doc('ERP Server Settings')
-
-def send_welcome_msg():
-
-    data = get_welcome_cust_from_server()
-    print(data['message'])
-
-    message_list = data['message']
-
-    com_status_obj_list = []
-    
-    customer_data = json.loads(message_list["customer_data"])
-    for customer in customer_data:
-        first_name = customer.get("First Name")
-        mobile_number = customer.get("Mobile Number")
-        wa_template = frappe.get_doc("WA Template", {"name": "Welcome Message"})
-        context = {
-            "first_name": first_name
-        }
-        message = frappe.render_template(urllib.parse.unquote(message_list["message_template"]), context)
-        result = send_automated_wa_msg(mobile_number,message)       
-        if(result.get("status") == "Success"):
-            com_status_obj = {
-                "sales_order": customer.get("Sales Order"),
-                "welcome_msg_status": "Sent"
-            }
-            com_status_obj_list.append(com_status_obj)
-        else:
-            #TODO: Implement Failure notification logic
-            print("Will send Failure notification")   
-    response = update_communication_status_on_server(com_status_obj_list)
-    return response  
-   
-
-
-def get_welcome_cust_from_server():
-    # You may pass headers if required
-    headers = {
+headers = {
         "Authorization": f"token {erp_server_settings.api_key}:{erp_server_settings.api_secret}",
         "Content-Type": "application/json"
     }
+
+def send_wa_automated_msgs():
+    send_welcome_msg()
+    send_thankyou_msg()
+
+
+def send_welcome_msg():
+    data = get_welcome_data_from_server()
+    return process_data_and_send_msg(data, "Welcome")
     
+def send_thankyou_msg():
+    data = get_thankyou_data_from_server()
+    return process_data_and_send_msg(data, "Thankyou")
+
+def process_data_and_send_msg(data, message_type):
+
+    print(data)
+    message_list = data.get("message")
+
+    com_status_obj_list = []
+    
+    customer_data = json.loads(message_list.get("customer_data"))
+    
+    for customer in customer_data:
+        print(customer)
+        first_name = customer.get("First Name")
+        mobile_number = customer.get("Mobile Number")
+        loyalty_points = customer.get("Loyalty Points")
+        context = {
+            "first_name": first_name,
+            "loyalty_points": loyalty_points
+        }
+        
+
+        message = frappe.render_template(urllib.parse.unquote(message_list["message_template"]), context)
+        result = send_automated_wa_msg(mobile_number,message)      
+
+        if(result.get("status") == "Success"):
+            if(message_type == "Welcome"):
+                com_status_obj = {
+                    "sales_order": customer.get("Sales Order"),
+                    "welcome_msg_status": "Sent"
+                }
+            elif (message_type == "Thankyou"):
+                com_status_obj = {
+                    "sales_order": customer.get("Sales Order"),
+                    "thankyou_msg_status": "Sent"
+                }
+            com_status_obj_list.append(com_status_obj)
+        else:
+            #TODO: Implement Failure notification logic
+            print("Will send Failure notification") 
+    print("Comm Status List")
+    print(com_status_obj_list)        
+    response = update_communication_status_on_server(com_status_obj_list)
+    return response  
+
+
+def get_welcome_data_from_server(): 
+    return get_data_from_server("get_data_for_welcome_msg")
+
+def get_thankyou_data_from_server(): 
+    return get_data_from_server("get_data_for_thankyou_msg")
+    
+def get_data_from_server(method):
     try:
         # Make the GET request to the API
-        response = requests.get(erp_server_settings.api_url + "get_cust_for_welcome_msg", headers=headers)
+        response = requests.get(erp_server_settings.api_url + method, headers=headers)
 
         # Check if the request was successful (status code 200)
         if response.status_code == 200:
@@ -76,6 +104,7 @@ def get_welcome_cust_from_server():
             "status": "error",
             "message": f"An error occurred: {str(e)}"
         }
+
     
 
 #Sends WA msg using Selenium in headless mode
@@ -120,12 +149,6 @@ def send_automated_wa_msg(mobile_no, message):
         }
 
 def update_communication_status_on_server(com_status_obj_list):
-    
-    # You may pass headers if required
-    headers = {
-        "Authorization": f"token {erp_server_settings.api_key}:{erp_server_settings.api_secret}",
-        "Content-Type": "application/json"
-    }
     
     try:
         # Make the POST request to the API
