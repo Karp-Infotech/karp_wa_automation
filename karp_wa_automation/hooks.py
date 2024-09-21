@@ -148,7 +148,7 @@ app_license = "unlicense"
 # Scheduled Tasks
 # ---------------
 
-# scheduler_events = {
+scheduler_events = {
 # 	"all": [
 # 		"karp_wa_automation.tasks.all"
 # 	],
@@ -164,7 +164,12 @@ app_license = "unlicense"
 # 	"monthly": [
 # 		"karp_wa_automation.tasks.monthly"
 # 	],
-# }
+    "cron": {
+            "*/4 * * * *": [
+                "karp_wa_automation.automation.wa_automation.send_automated_wa_msg"
+            ]
+        }
+}
 
 # Testing
 # -------
