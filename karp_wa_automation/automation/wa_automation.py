@@ -13,6 +13,8 @@ import requests
 import urllib.parse
 
 erp_server_settings = frappe.get_doc('ERP Server Settings')
+erp_client_settings = frappe.get_doc('ERP Client Settings')
+
 headers = {
         "Authorization": f"token {erp_server_settings.api_key}:{erp_server_settings.api_secret}",
         "Content-Type": "application/json"
@@ -110,13 +112,13 @@ def send_automated_wa_msg(mobile_no, message):
     try:
         # Set up Chrome options
         chrome_options = Options()
-        chrome_options.add_argument("user-data-dir=/Users/sushilpal/Library/Application Support/Google/Chrome/Default") 
+        chrome_options.add_argument(f"user-data-dir={erp_client_settings.chrome_profile_location}") 
         chrome_options.add_argument("--headless")  # Enable headless mode
         chrome_options.add_argument("--no-sandbox")  # Bypass OS security model
         chrome_options.add_argument("--disable-dev-shm-usage")  # Overcome limited resource problems
 
         # Path to your ChromeDriver
-        chrome_driver_path = '/Users/sushilpal/Workspace/Karp/WA_Script/chromedriver' 
+        chrome_driver_path = erp_client_settings.chrome_driver_path
 
         # Set up ChromeDriver service
         service = Service(chrome_driver_path)
