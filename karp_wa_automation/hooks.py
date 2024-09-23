@@ -166,7 +166,7 @@ scheduler_events = {
 # 	],
     "cron": {
             "*/4 * * * *": [
-                "karp_wa_automation.automation.wa_automation.send_automated_wa_msg"
+                "karp_wa_automation.automation.wa_automation.send_wa_automated_msgs"
             ]
         }
 }

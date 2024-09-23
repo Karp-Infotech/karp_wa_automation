@@ -19,6 +19,7 @@ headers = {
     }
 
 def send_wa_automated_msgs():
+    print("Sending WA msgs")
     send_welcome_msg()
     send_thankyou_msg()
 
@@ -33,7 +34,6 @@ def send_thankyou_msg():
 
 def process_data_and_send_msg(data, message_type):
 
-    print(data)
     message_list = data.get("message")
 
     com_status_obj_list = []
@@ -41,7 +41,6 @@ def process_data_and_send_msg(data, message_type):
     customer_data = json.loads(message_list.get("customer_data"))
     
     for customer in customer_data:
-        print(customer)
         first_name = customer.get("First Name")
         mobile_number = customer.get("Mobile Number")
         loyalty_points = customer.get("Loyalty Points")
@@ -68,9 +67,7 @@ def process_data_and_send_msg(data, message_type):
             com_status_obj_list.append(com_status_obj)
         else:
             #TODO: Implement Failure notification logic
-            print("Will send Failure notification") 
-    print("Comm Status List")
-    print(com_status_obj_list)        
+            print("Will send Failure notification")      
     response = update_communication_status_on_server(com_status_obj_list)
     return response  
 
