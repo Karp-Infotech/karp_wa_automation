@@ -113,9 +113,10 @@ def send_automated_wa_msg(mobile_no, message):
         # Set up Chrome options
         chrome_options = Options()
         chrome_options.add_argument(f"user-data-dir={erp_client_settings.chrome_profile_location}") 
-        chrome_options.add_argument("--headless")  # Enable headless mode
-        chrome_options.add_argument("--no-sandbox")  # Bypass OS security model
-        chrome_options.add_argument("--disable-dev-shm-usage")  # Overcome limited resource problems
+        if(erp_client_settings.wa_automation_mode == "Headless"):
+            chrome_options.add_argument("--headless")  # Enable headless mode
+            chrome_options.add_argument("--no-sandbox")  # Bypass OS security model
+            chrome_options.add_argument("--disable-dev-shm-usage")  # Overcome limited resource problems
 
         # Path to your ChromeDriver
         chrome_driver_path = erp_client_settings.chrome_driver_path
