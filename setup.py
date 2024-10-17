@@ -2,9 +2,9 @@ from setuptools import setup, find_packages
 
 
 setup(
-    name="karp_communication",
+    name="karp_wa_automation",
     version=1,
-    description="Tools to communicate with colaborators",
+    description="Whatsapp automation",
     author="Karp Infotech",
     author_email="sushil.pal@gmail.com",
     packages=find_packages(),

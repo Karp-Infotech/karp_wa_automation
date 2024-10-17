@@ -20,11 +20,15 @@ headers = {
         "Content-Type": "application/json"
     }
 
-def send_wa_automated_msgs():
-    print("Sending WA msgs")
-    send_welcome_msg()
-    send_thankyou_msg()
+# def send_wa_automated_msgs():
+#     print("Sending WA msgs")
+#     send_welcome_msg()
+#     send_thankyou_msg()
 
+def send_transactional_wa_msgs():
+    send_welcome_msg()
+    send_order_ready_msg()
+    send_thankyou_msg()
 
 def send_welcome_msg():
     data = get_welcome_data_from_server()
@@ -33,6 +37,10 @@ def send_welcome_msg():
 def send_thankyou_msg():
     data = get_thankyou_data_from_server()
     return process_data_and_send_msg(data, "Thankyou")
+
+def send_order_ready_msg():
+    data = get_order_ready_data_from_server()
+    return process_data_and_send_msg(data, "OrderReady")
 
 def process_data_and_send_msg(data, message_type):
 
@@ -53,7 +61,7 @@ def process_data_and_send_msg(data, message_type):
         
 
         message = frappe.render_template(urllib.parse.unquote(message_list["message_template"]), context)
-        result = send_automated_wa_msg(mobile_number,message)      
+        result = send_automated_wa_msg(mobile_number,message,customer.get("Store"))   
 
         if(result.get("status") == "Success"):
             if(message_type == "Welcome"):
@@ -66,6 +74,11 @@ def process_data_and_send_msg(data, message_type):
                     "sales_order": customer.get("Sales Order"),
                     "thankyou_msg_status": "Sent"
                 }
+            elif (message_type == "OrderReady"):
+                com_status_obj = {
+                    "sales_order": customer.get("Sales Order"),
+                    "order_ready_msg_status": "Sent"
+                }    
             com_status_obj_list.append(com_status_obj)
         else:
             #TODO: Implement Failure notification logic
@@ -79,6 +92,9 @@ def get_welcome_data_from_server():
 
 def get_thankyou_data_from_server(): 
     return get_data_from_server("get_data_for_thankyou_msg")
+
+def get_order_ready_data_from_server(): 
+    return get_data_from_server("get_data_order_ready_for__msg")
     
 def get_data_from_server(method):
     try:
@@ -107,12 +123,12 @@ def get_data_from_server(method):
     
 
 #Sends WA msg using Selenium in headless mode
-def send_automated_wa_msg(mobile_no, message):
-
+def send_automated_wa_msg(mobile_no, message,store):
     try:
+        
         # Set up Chrome options
         chrome_options = Options()
-        chrome_options.add_argument(f"user-data-dir={erp_client_settings.chrome_profile_location}") 
+        chrome_options.add_argument(f"user-data-dir={get_chrome_profile_loc_for_store(store)}") 
         if(erp_client_settings.wa_automation_mode == "Headless"):
             chrome_options.add_argument("--headless")  # Enable headless mode
             chrome_options.add_argument("--no-sandbox")  # Bypass OS security model
@@ -126,15 +142,17 @@ def send_automated_wa_msg(mobile_no, message):
 
         # Create a new instance of the Chrome driver with options
         driver = webdriver.Chrome(service=service, options=chrome_options)
+        
         encoded_message = urllib.parse.quote(message)
 
         url = f"https://web.whatsapp.com/send/?phone={mobile_no}&type=phone_number&app_absent=0&text={encoded_message}"
 
 
         driver.get(url)
-        wait=WebDriverWait(driver,1000)
-        message_box_path='//*[@id="main"]/footer/div[1]/div/span[2]/div/div[2]/div[1]/div/div[1]'
+        wait=WebDriverWait(driver,100)
+        message_box_path='//*[@id="main"]/footer/div[1]/div/span/div/div[2]/div[1]/div/div[1]'
         message_box=wait.until(EC.presence_of_element_located((By.XPATH,message_box_path)))
+        print("Found Send Message Box")
         message_box.send_keys(Keys.ENTER)
         time.sleep(2)
         return {
@@ -147,6 +165,24 @@ def send_automated_wa_msg(mobile_no, message):
             "status": "Error",
             "message": f"An error occurred: {str(e)}"
         }
+
+def get_chrome_profile_loc_for_store(store):
+    
+    # Load the JSON field (assuming field name is 'key_value_data')
+    store_to_profile_loc = erp_client_settings.store_to_chrome_profile_loc
+
+    
+    print("Store: ")
+    print(store)
+    # Parse the JSON string into a Python dictionary
+    store_to_profile_loc_dict = json.loads(store_to_profile_loc)
+
+    # Retrieve the value for the given key
+    profile_loc = store_to_profile_loc_dict.get(store)
+
+    print("Profile Location: ")
+    print(profile_loc)
+    return profile_loc
 
 def update_communication_status_on_server(com_status_obj_list):
     
