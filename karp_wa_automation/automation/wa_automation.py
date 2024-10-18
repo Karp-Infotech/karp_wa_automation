@@ -55,8 +55,9 @@ def init_wa():
 #     send_thankyou_msg()
 
 def send_transactional_wa_msgs():
+    print("Sending Transaction WA msgs")
     send_welcome_msg()
-    send_order_ready_msg()
+    #send_order_ready_msg()
     send_thankyou_msg()
 
 def send_welcome_msg():
@@ -65,6 +66,8 @@ def send_welcome_msg():
     
 def send_thankyou_msg():
     data = get_thankyou_data_from_server()
+    print("Thankyou Msg Data: ")
+    print(data)
     return process_data_and_send_msg(data, "Thankyou")
 
 def send_order_ready_msg():
@@ -90,7 +93,7 @@ def process_data_and_send_msg(data, message_type):
         
 
         message = frappe.render_template(urllib.parse.unquote(message_list["message_template"]), context)
-        
+
         result = send_automated_wa_msg(mobile_number,message,customer.get("Store"))   
 
         if(result.get("status") == "Success"):
@@ -124,7 +127,7 @@ def get_thankyou_data_from_server():
     return get_data_from_server("get_data_for_thankyou_msg")
 
 def get_order_ready_data_from_server(): 
-    return get_data_from_server("get_data_order_ready_for__msg")
+    return get_data_from_server("get_data_for_order_ready_msg")
     
 def get_data_from_server(method):
     try:
@@ -182,7 +185,6 @@ def send_automated_wa_msg(mobile_no, message,store):
         wait=WebDriverWait(driver,100)
         message_box_path='//*[@id="main"]/footer/div[1]/div/span/div/div[2]/div[1]/div/div[1]'
         message_box=wait.until(EC.presence_of_element_located((By.XPATH,message_box_path)))
-        print("Found Send Message Box")
         message_box.send_keys(Keys.ENTER)
         time.sleep(2)
         return {
