@@ -165,8 +165,11 @@ scheduler_events = {
 # 		"karp_wa_automation.tasks.monthly"
 # 	],
     "cron": {
-            "*/15 * * * *": [
+            "*/30 * * * *": [
                 "karp_wa_automation.automation.wa_automation.send_transactional_wa_msgs"
+            ],
+            "0 0 1 1 *": [
+                "karp_wa_automation.automation.wa_automation.init_wa"
             ]
         }
 }

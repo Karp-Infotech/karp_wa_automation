@@ -20,6 +20,35 @@ headers = {
         "Content-Type": "application/json"
     }
 
+def init_wa():
+    # Load the JSON field (assuming field name is 'key_value_data')
+    store_to_profile_loc = erp_client_settings.store_to_chrome_profile_loc
+
+    # Parse the JSON string into a Python dictionary
+    store_to_profile_loc_dict = json.loads(store_to_profile_loc)
+    # Iterate over key-value pairs
+    for store, chorme_profile_loc in store_to_profile_loc_dict.items():
+        print(f"{chorme_profile_loc}")
+         # Set up Chrome options
+        chrome_options = Options()
+        chrome_options.add_argument(f"user-data-dir={chorme_profile_loc}") 
+
+        # Path to your ChromeDriver
+        chrome_driver_path = erp_client_settings.chrome_driver_path
+
+        # Set up ChromeDriver service
+        service = Service(chrome_driver_path)
+
+        # Create a new instance of the Chrome driver with options
+        driver = webdriver.Chrome(service=service, options=chrome_options)
+        
+
+        url = f"https://web.whatsapp.com/send/?type=phone_number&app_absent=0"
+
+        driver.get(url)
+        input()
+        
+
 # def send_wa_automated_msgs():
 #     print("Sending WA msgs")
 #     send_welcome_msg()
@@ -61,6 +90,7 @@ def process_data_and_send_msg(data, message_type):
         
 
         message = frappe.render_template(urllib.parse.unquote(message_list["message_template"]), context)
+        
         result = send_automated_wa_msg(mobile_number,message,customer.get("Store"))   
 
         if(result.get("status") == "Success"):
@@ -171,17 +201,12 @@ def get_chrome_profile_loc_for_store(store):
     # Load the JSON field (assuming field name is 'key_value_data')
     store_to_profile_loc = erp_client_settings.store_to_chrome_profile_loc
 
-    
-    print("Store: ")
-    print(store)
     # Parse the JSON string into a Python dictionary
     store_to_profile_loc_dict = json.loads(store_to_profile_loc)
 
     # Retrieve the value for the given key
     profile_loc = store_to_profile_loc_dict.get(store)
 
-    print("Profile Location: ")
-    print(profile_loc)
     return profile_loc
 
 def update_communication_status_on_server(com_status_obj_list):
