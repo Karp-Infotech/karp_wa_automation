@@ -57,7 +57,7 @@ def init_wa():
 def send_transactional_wa_msgs():
     print("Sending Transaction WA msgs")
     send_welcome_msg()
-    #send_order_ready_msg()
+    send_order_ready_msg()
     send_thankyou_msg()
 
 def send_welcome_msg():
@@ -66,8 +66,6 @@ def send_welcome_msg():
     
 def send_thankyou_msg():
     data = get_thankyou_data_from_server()
-    print("Thankyou Msg Data: ")
-    print(data)
     return process_data_and_send_msg(data, "Thankyou")
 
 def send_order_ready_msg():
@@ -91,7 +89,6 @@ def process_data_and_send_msg(data, message_type):
             "loyalty_points": loyalty_points
         }
         
-
         message = frappe.render_template(urllib.parse.unquote(message_list["message_template"]), context)
 
         result = send_automated_wa_msg(mobile_number,message,customer.get("Store"))   
@@ -114,9 +111,25 @@ def process_data_and_send_msg(data, message_type):
                 }    
             com_status_obj_list.append(com_status_obj)
         else:
-            #TODO: Implement Failure notification logic
-            print("Will send Failure notification")      
+            if(message_type == "Welcome"):
+                com_status_obj = {
+                    "sales_order": customer.get("Sales Order"),
+                    "welcome_msg_status": "Error"
+                }
+            elif (message_type == "Thankyou"):
+                com_status_obj = {
+                    "sales_order": customer.get("Sales Order"),
+                    "thankyou_msg_status": "Error"
+                }
+            elif (message_type == "OrderReady"):
+                com_status_obj = {
+                    "sales_order": customer.get("Sales Order"),
+                    "order_ready_msg_status": "Error"
+                }    
+            com_status_obj_list.append(com_status_obj)      
     response = update_communication_status_on_server(com_status_obj_list)
+    #Send Report
+    send_automated_wa_msg("+919359234852","Automated Msg Sent","Sect 14 Gurgaon - LS") 
     return response  
 
 
@@ -182,14 +195,14 @@ def send_automated_wa_msg(mobile_no, message,store):
 
 
         driver.get(url)
-        wait=WebDriverWait(driver,100)
+        wait=WebDriverWait(driver,15)
         message_box_path='//*[@id="main"]/footer/div[1]/div/span/div/div[2]/div[1]/div/div[1]'
         message_box=wait.until(EC.presence_of_element_located((By.XPATH,message_box_path)))
         message_box.send_keys(Keys.ENTER)
         time.sleep(2)
         return {
             "status": "Success"
-        }
+        }   
     except Exception as e:
         # Log any exceptions
         frappe.log_error(message=str(e), title="Failed to send WA message for " + mobile_no)
