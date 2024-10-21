@@ -249,3 +249,71 @@ def update_communication_status_on_server(com_status_obj_list):
             "message": f"An error occurred: {str(e)}"
         }
 
+
+
+def send_marketing_msgs():
+
+    data = get_data_from_server("get_active_wa_marketing_campaigns")
+
+    wa_campaigns = data.get("message")
+
+    cust_campaign_inclusion_list = []
+
+    # Iterate over the list of campaigns and process each one
+    for campaign in wa_campaigns:
+        # Access fields for each campaign
+        campaign_name = campaign.get('Campaign Name')  # Example: Get the 'name' field
+        # campaign_status = campaign.get('status')  # Example: Get the 'status' field
+        # Add more fields based on your requirements
+
+        # Process the campaign (you can print or log information as needed)
+        customers = json.loads(campaign.get('Customers'))
+        
+        for customer in customers:
+
+            context = {
+                "first_name": customer.get('First Name')
+            }
+            message = frappe.render_template(urllib.parse.unquote(campaign.get("WA Message")), context)
+            # result = send_automated_wa_msg(customer.get("Mobile Number"),message,campaign.get("Store"))   
+            # if(result.get("status") == "Success"):
+            #     cust_campaign_inclusion = {
+            #         "Campaign": campaign.get('Campaign Id'),
+            #         "Customer": customer.get('Customer Name')
+            #     }
+
+            cust_campaign_inclusion = {
+                "Campaign": campaign.get('Campaign Id'),
+                "Customer": customer.get('Customer Name')
+            }
+
+            cust_campaign_inclusion_list.append(cust_campaign_inclusion) 
+
+    print(cust_campaign_inclusion_list)
+    update_cust_campaign_inc_on_server(cust_campaign_inclusion_list)
+
+
+def update_cust_campaign_inc_on_server(cust_campaign_inclusion_list):
+    
+    try:
+        # Make the POST request to the API
+        response = requests.post(erp_server_settings.api_url + "update_cust_campaign_inc_on_server", headers=headers, json=cust_campaign_inclusion_list)
+
+        # Check if the request was successful (status code 200)
+        if response.status_code == 200:
+            # Parse the response JSON
+            data = response.json()
+            # Return the parsed JSON data (you can modify this as needed)
+            return data
+        else:
+            return {
+                "status": "error",
+                "message": f"Failed to fetch data from API. Status Code: {response.status_code}"
+            }
+    except Exception as e:
+        # Log any exceptions
+        frappe.log_error(message=str(e), title="API Call Failed")
+        return {
+            "status": "error",
+            "message": f"An error occurred: {str(e)}"
+        }
