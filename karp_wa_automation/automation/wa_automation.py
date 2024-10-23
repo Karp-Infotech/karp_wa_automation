@@ -259,12 +259,12 @@ def send_marketing_msgs():
 
     cust_campaign_inclusion_list = []
 
+    print (wa_campaigns)
+
     # Iterate over the list of campaigns and process each one
     for campaign in wa_campaigns:
         # Access fields for each campaign
-        campaign_name = campaign.get('Campaign Name')  # Example: Get the 'name' field
-        # campaign_status = campaign.get('status')  # Example: Get the 'status' field
-        # Add more fields based on your requirements
+        campaign_name = campaign.get('Campaign Name')  
 
         # Process the campaign (you can print or log information as needed)
         customers = json.loads(campaign.get('Customers'))
@@ -275,21 +275,20 @@ def send_marketing_msgs():
                 "first_name": customer.get('First Name')
             }
             message = frappe.render_template(urllib.parse.unquote(campaign.get("WA Message")), context)
-            # result = send_automated_wa_msg(customer.get("Mobile Number"),message,campaign.get("Store"))   
-            # if(result.get("status") == "Success"):
-            #     cust_campaign_inclusion = {
-            #         "Campaign": campaign.get('Campaign Id'),
-            #         "Customer": customer.get('Customer Name')
-            #     }
+            result = send_automated_wa_msg(customer.get("Mobile Number"),message,campaign.get("Store"))   
+            if(result.get("status") == "Success"):
+                cust_campaign_inclusion = {
+                    "Campaign": campaign.get('Campaign Id'),
+                    "Customer": customer.get('Customer Name')
+                }
 
             cust_campaign_inclusion = {
-                "Campaign": campaign.get('Campaign Id'),
+                "Campaign": campaign.get('Campaign Name'),
                 "Customer": customer.get('Customer Name')
             }
 
             cust_campaign_inclusion_list.append(cust_campaign_inclusion) 
 
-    print(cust_campaign_inclusion_list)
     update_cust_campaign_inc_on_server(cust_campaign_inclusion_list)
 
 
