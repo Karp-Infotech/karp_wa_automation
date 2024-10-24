@@ -170,7 +170,10 @@ scheduler_events = {
             ],
             "0 0 1 1 *": [
                 "karp_wa_automation.automation.wa_automation.init_wa"
-            ]
+            ],
+            "*/4 9-22 * * *": [
+                "karp_wa_automation.automation.wa_automation.send_marketing_msgs"
+            ],
         }
 }
 
