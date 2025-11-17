@@ -168,48 +168,48 @@ def get_data_from_server(method):
 
     
 
-#Sends WA msg using Selenium in headless mode
-def send_automated_wa_msg(mobile_no, message,store):
+# Sends WA msg using Selenium in headless mode
+def send_automated_wa_msg(mobile_no, message, store):
     try:
-        
-        # Set up Chrome options
         chrome_options = Options()
-        chrome_options.add_argument(f"user-data-dir={get_chrome_profile_loc_for_store(store)}") 
-        if(erp_client_settings.wa_automation_mode == "Headless"):
-            chrome_options.add_argument("--headless")  # Enable headless mode
-            chrome_options.add_argument("--no-sandbox")  # Bypass OS security model
-            chrome_options.add_argument("--disable-dev-shm-usage")  # Overcome limited resource problems
+        chrome_options.add_argument(f"user-data-dir={get_chrome_profile_loc_for_store(store)}")
 
-        # Path to your ChromeDriver
-        chrome_driver_path = erp_client_settings.chrome_driver_path
+        if erp_client_settings.wa_automation_mode == "Headless":
+            chrome_options.add_argument("--headless=new")
+            chrome_options.add_argument("--no-sandbox")
+            chrome_options.add_argument("--disable-dev-shm-usage")
+            chrome_options.add_argument("--disable-gpu")
+            chrome_options.add_argument("--window-size=1920,1080")
 
-        # Set up ChromeDriver service
-        service = Service(chrome_driver_path)
+        driver = webdriver.Chrome(
+            service=Service(erp_client_settings.chrome_driver_path),
+            options=chrome_options
+        )
 
-        # Create a new instance of the Chrome driver with options
-        driver = webdriver.Chrome(service=service, options=chrome_options)
-        
         encoded_message = urllib.parse.quote(message)
-
-        url = f"https://web.whatsapp.com/send/?phone={mobile_no}&type=phone_number&app_absent=0&text={encoded_message}"
-
+        url = f"https://web.whatsapp.com/send/?phone={mobile_no}&text={encoded_message}"
 
         driver.get(url)
-        wait=WebDriverWait(driver,15)
-        message_box_path='//*[@id="main"]/footer/div[1]/div/span/div/div[2]/div[1]/div/div[1]'
-        message_box=wait.until(EC.presence_of_element_located((By.XPATH,message_box_path)))
-        message_box.send_keys(Keys.ENTER)
+
+        wait = WebDriverWait(driver, 20)
+
+        msg_box = wait.until(
+            EC.presence_of_element_located(
+                (By.CSS_SELECTOR, "div[contenteditable='true'][data-tab='10']")
+            )
+        )
+
+        msg_box.click()             # important for headless mode!
+        time.sleep(0.8)
+        msg_box.send_keys(Keys.ENTER)
+
         time.sleep(2)
-        return {
-            "status": "Success"
-        }   
+
+        return {"status": "Success"}
+
     except Exception as e:
-        # Log any exceptions
         frappe.log_error(message=str(e), title="Failed to send WA message for " + mobile_no)
-        return {
-            "status": "Error",
-            "message": f"An error occurred: {str(e)}"
-        }
+        return {"status": "Error", "message": f"An error occurred: {str(e)}"}
 
 def get_chrome_profile_loc_for_store(store):
     
